@@ -39,3 +39,40 @@
 
 -- TODO (опционально):
 -- триггер автообновления updated_at
+
+
+CREATE TABLE idempotency_keys (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    idempotency_key VARCHAR(255) NOT NULL,
+    request_method VARCHAR(16) NOT NULL,
+    request_path TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'processing',
+    status_code INTEGER,
+    response_body JSONB,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMP NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
+    
+    CONSTRAINT idempotency_status_check CHECK (status IN ('processing', 'completed', 'failed')),
+    CONSTRAINT uniq_idempotency_key_method_path UNIQUE (idempotency_key, request_method, request_path)
+);
+
+CREATE INDEX idx_idempotency_lookup 
+    ON idempotency_keys (idempotency_key, request_method, request_path);
+
+CREATE INDEX idx_idempotency_expires 
+    ON idempotency_keys (expires_at);
+
+CREATE OR REPLACE FUNCTION update_idempotency_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trig_idempotency_updated_at
+    BEFORE UPDATE ON idempotency_keys
+    FOR EACH ROW
+    EXECUTE FUNCTION update_idempotency_updated_at();
