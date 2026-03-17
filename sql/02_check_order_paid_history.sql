@@ -12,7 +12,7 @@ SELECT
     order_id,
     count(*) AS paid_events
 FROM order_status_history
-WHERE order_id = '{{order_id}}'::uuid
+WHERE order_id = 'f02c7dfb-e7d3-4263-a4f7-dfd3d5f238ab'::uuid
   AND status = 'paid'
 GROUP BY order_id;
 
@@ -23,5 +23,5 @@ SELECT
     status,
     changed_at
 FROM order_status_history
-WHERE order_id = '{{order_id}}'::uuid
+WHERE order_id = 'f02c7dfb-e7d3-4263-a4f7-dfd3d5f238ab'::uuid
 ORDER BY changed_at;
