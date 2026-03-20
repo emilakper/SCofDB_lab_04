@@ -6,7 +6,9 @@ from typing import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-
+from app.infrastructure.db import SessionLocal
+from sqlalchemy import text
+import json
 
 class IdempotencyMiddleware(BaseHTTPMiddleware):
     """
@@ -28,10 +30,6 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
 
         raw_body = await request.body()
         request_hash = self.build_request_hash(raw_body)
-
-        from app.infrastructure.db import SessionLocal
-        from sqlalchemy import text
-        import json
 
         async with SessionLocal() as session:
             try:
